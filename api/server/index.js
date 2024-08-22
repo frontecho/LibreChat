@@ -4,6 +4,7 @@ require('module-alias')({ base: path.resolve(__dirname, '..') });
 const cors = require('cors');
 const axios = require('axios');
 const express = require('express');
+const compression = require('compression');
 const passport = require('passport');
 const mongoSanitize = require('express-mongo-sanitize');
 const { jwtLogin, passportLogin } = require('~/strategies');
@@ -17,8 +18,9 @@ const configureSocialLogins = require('./socialLogins');
 const AppService = require('./services/AppService');
 const noIndex = require('./middleware/noIndex');
 const routes = require('./routes');
+const staticCache = require('./utils/staticCache');
 
-const { PORT, HOST, ALLOW_SOCIAL_LOGIN } = process.env ?? {};
+const { PORT, HOST, ALLOW_SOCIAL_LOGIN, DISABLE_COMPRESSION } = process.env ?? {};
 
 const port = Number(PORT) || 3080;
 const host = HOST || 'localhost';
@@ -43,11 +45,15 @@ const startServer = async () => {
   app.use(express.json({ limit: '3mb' }));
   app.use(mongoSanitize());
   app.use(express.urlencoded({ extended: true, limit: '3mb' }));
-  app.use(express.static(app.locals.paths.dist));
-  app.use(express.static(app.locals.paths.fonts));
-  app.use(express.static(app.locals.paths.assets));
+  app.use(staticCache(app.locals.paths.dist));
+  app.use(staticCache(app.locals.paths.fonts));
+  app.use(staticCache(app.locals.paths.assets));
   app.set('trust proxy', 1); // trust first proxy
   app.use(cors());
+
+  if (DISABLE_COMPRESSION !== 'true') {
+    app.use(compression());
+  }
 
   if (!ALLOW_SOCIAL_LOGIN) {
     console.warn(
@@ -61,7 +67,7 @@ const startServer = async () => {
   passport.use(passportLogin());
 
   // LDAP Auth
-  if (process.env.LDAP_URL && process.env.LDAP_BIND_DN && process.env.LDAP_USER_SEARCH_BASE) {
+  if (process.env.LDAP_URL && process.env.LDAP_USER_SEARCH_BASE) {
     passport.use(ldapLogin);
   }
 
@@ -81,6 +87,7 @@ const startServer = async () => {
   app.use('/api/convos', routes.convos);
   app.use('/api/presets', routes.presets);
   app.use('/api/prompts', routes.prompts);
+  app.use('/api/categories', routes.categories);
   app.use('/api/tokenizer', routes.tokenizer);
   app.use('/api/endpoints', routes.endpoints);
   app.use('/api/balance', routes.balance);
@@ -91,7 +98,9 @@ const startServer = async () => {
   app.use('/api/files', await routes.files.initialize());
   app.use('/images/', validateImageRequest, routes.staticRoute);
   app.use('/api/share', routes.share);
+  app.use('/api/roles', routes.roles);
 
+  app.use('/api/tags', routes.tags);
   app.use((req, res) => {
     res.sendFile(path.join(app.locals.paths.dist, 'index.html'));
   });
