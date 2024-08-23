@@ -1,11 +1,12 @@
 name: Node.js Package
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'packages/data-provider/package.json'
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'packages/data-provider/package.json'
 
 jobs:
   build:
