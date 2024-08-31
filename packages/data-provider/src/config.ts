@@ -423,6 +423,8 @@ export const configSchema = z.object({
       parameters: true,
       sidePanel: true,
       presets: true,
+      bookmarks: true,
+      prompts: true,
     }),
   fileStrategy: fileSourceSchema.default(FileSources.local),
   registration: z
@@ -475,6 +477,7 @@ export enum KnownEndpoints {
   apipie = 'apipie',
   cohere = 'cohere',
   fireworks = 'fireworks',
+  deepseek = 'deepseek',
   groq = 'groq',
   huggingface = 'huggingface',
   mistral = 'mistral',
@@ -484,6 +487,7 @@ export enum KnownEndpoints {
   perplexity = 'perplexity',
   shuttleai = 'shuttleai',
   'together.ai' = 'together.ai',
+  unify = 'unify',
 }
 
 export enum FetchTokenConfig {
@@ -835,6 +839,11 @@ export enum ErrorTypes {
    * Moderation error
    */
   MODERATION = 'moderation',
+
+  /**
+   * Prompt exceeds max length
+   */
+  INPUT_LENGTH = 'INPUT_LENGTH',
 }
 
 /**
@@ -944,7 +953,7 @@ export enum TTSProviders {
 /** Enum for app-wide constants */
 export enum Constants {
   /** Key for the app's version. */
-  VERSION = 'v0.7.4',
+  VERSION = 'v0.7.5-rc1',
   /** Key for the Custom Config's version (librechat.yaml). */
   CONFIG_VERSION = '1.1.6',
   /** Standard value for the first message's `parentMessageId` value, to indicate no parent exists. */
