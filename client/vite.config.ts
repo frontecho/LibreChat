@@ -33,7 +33,7 @@ export default defineConfig({
     fs: {
       cachedChecks: false,
     },
-    host: 'localhost',
+    host: '127.0.0.1',
     port: 3090,
     strictPort: false,
     proxy: {

@@ -3,61 +3,78 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+      args:
+        - USER_UID=${UID:-1000}
+        - USER_GID=${GID:-1000}
     # restart: always
     links:
       - mongodb
       - meilisearch
-    # ports:
-    #   - 3080:3080               # Change it to 9000:3080 to use nginx
+      - rag_api
     extra_hosts: # if you are running APIs on docker you need access to, you will need to uncomment this line and next
-    - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"
 
     volumes:
       # This is where VS Code should expect to find your project's source code and the value of "workspaceFolder" in .devcontainer/devcontainer.json
       - ..:/workspaces:cached
-      # Uncomment the next line to use Docker from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker-compose for details.
-      # - /var/run/docker.sock:/var/run/docker.sock 
-    environment:
-      - HOST=0.0.0.0
-      - MONGO_URI=mongodb://mongodb:27017/LibreChat
-      # - CHATGPT_REVERSE_PROXY=http://host.docker.internal:8080/api/conversation # if you are hosting your own chatgpt reverse proxy with docker
-      # - OPENAI_REVERSE_PROXY=http://host.docker.internal:8070/v1/chat/completions # if you are hosting your own chatgpt reverse proxy with docker
-      - MEILI_HOST=http://meilisearch:7700
-
-    # Runs app on the same network as the service container, allows "forwardPorts" in devcontainer.json function.
-    # network_mode: service:another-service
-    
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOME}/.ssh:/home/node/.ssh-localhost:ro
 
     # Use a non-root user for all processes - See https://aka.ms/vscode-remote/containers/non-root for details.
-    user: vscode
+    user: "${UID:-1000}:${GID:-1000}"
 
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 1000; do :; done"  
 
   mongodb:
     container_name: chat-mongodb
+    image: mongo:latest
+    # restart: always
     expose:
       - 27017
-    # ports:
-    #   - 27018:27017
-    image: mongo
-    # restart: always
     volumes:
       - ./data-node:/data/db
     command: mongod --noauth
   meilisearch:
     container_name: chat-meilisearch
-    image: getmeili/meilisearch:v1.5
+    image: getmeili/meilisearch:v1.7.3
     # restart: always
     expose:
       - 7700
-    # Uncomment this to access meilisearch from outside docker
-    # ports: 
-    #   - 7700:7700 # if exposing these ports, make sure your master key is not the default value
-    environment:
-      - MEILI_NO_ANALYTICS=true
-      - MEILI_MASTER_KEY=5c71cf56d672d009e36070b5bc5e47b743535ae55c818ae3b735bb6ebfb4ba63
+    env_file:
+      - .env
     volumes:
       - ./meili_data_v1.5:/meili_data
+  rag_api:
+    container_name: rag_api
+    image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
+    # restart: always
+    depends_on:
+      - vectordb
+    expose:
+      - 8000
+    environment:
+      - RAG_PORT=${RAG_PORT:-8000}
+      - DB_HOST=vectordb
+      - DB_PORT=5432
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      # - VECTOR_DB_TYPE=atlas-mongo
+      # - ATLAS_MONGO_DB_URI=${MONGO_URI}
+      # - COLLECTION_NAME=ragvectors
+      # - ATLAS_SEARCH_INDEX=vecid
+    env_file:
+      - .env
+  vectordb:
+    container_name: vectordb
+    image: ankane/pgvector:latest
+    environment:
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+    volumes:
+      - pgdata2:/var/lib/postgresql/data
+
+volumes:
+  pgdata2:
