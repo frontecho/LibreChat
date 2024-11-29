@@ -1,7 +1,11 @@
 {
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
+  "remoteUser": "node",
   "workspaceFolder": "/workspaces",
+  "features": {
+    // "ghcr.io/devcontainers/features/git:1": {}
+  },
   "customizations": {
     "vscode": {
       "extensions": [],
@@ -12,7 +16,6 @@
       }
     }
   },
-  "postCreateCommand": "",
-  "features": { "ghcr.io/devcontainers/features/git:1": {} },
-  "remoteUser": "vscode"
+  "postCreateCommand": "mkdir -p /home/node/.ssh && cp -r /home/node/.ssh-host/* /home/node/.ssh && chmod 700 /home/node/.ssh && chmod 600 /home/node/.ssh/*",
+  "forwardPorts": [3080, 3090]
 }

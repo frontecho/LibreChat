@@ -3,6 +3,7 @@
 # Logs
 data-node
 meili_data*
+pgdata2
 data/
 logs
 *.log
@@ -63,6 +64,7 @@ librechat.yml
 .env*
 my.secrets
 !**/.env.example
+!**/.env.dev.example
 !**/.env.test.example
 cache.json
 api/data/
