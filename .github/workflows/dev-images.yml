@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - dev
     paths:
       - 'api/**'
       - 'client/**'
@@ -27,6 +27,8 @@ jobs:
       # Check out the repository
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: dev
 
       # Set up QEMU
       - name: Set up QEMU
