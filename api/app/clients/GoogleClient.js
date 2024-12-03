@@ -610,11 +610,18 @@ class GoogleClient extends BaseClient {
       return new GenAI(this.apiKey).getGenerativeModel({
         ...clientOptions,
         model,
+      }, {
+        apiVersion: 'v1beta',
+        baseUrl: this.completionsUrl,
       });
     }
 
     logger.debug('Creating Chat Google Generative AI client');
-    return new ChatGoogleGenerativeAI({ ...clientOptions, apiKey: this.apiKey });
+    return new ChatGoogleGenerativeAI({
+      ...clientOptions,
+      apiKey: this.apiKey,
+      baseUrl: this.completionsUrl,
+    });
   }
 
   async getCompletion(_payload, options = {}) {
