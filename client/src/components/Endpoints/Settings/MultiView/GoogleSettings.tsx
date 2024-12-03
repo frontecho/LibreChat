@@ -13,7 +13,7 @@ export default function GoogleView({ conversation, models, isPreset = false }) {
   }
 
   const { examples, model } = conversation;
-  const isGenerativeModel = model?.toLowerCase()?.includes('gemini');
+  const isGenerativeModel = model?.toLowerCase()?.includes('gemini') || model?.toLowerCase()?.includes('learnlm');
   const isChatModel = !isGenerativeModel && model?.toLowerCase()?.includes('chat');
   const isTextModel = !isGenerativeModel && !isChatModel && /code|text/.test(model ?? '');
   const { showExamples } = optionSettings;

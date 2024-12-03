@@ -30,6 +30,8 @@ function getGoogleIcon(model: string | null | undefined, size: number) {
     return <CodeyIcon size={size * 0.75} />;
   } else if (model?.toLowerCase().includes('gemini') === true) {
     return <GeminiIcon size={size * 0.7} />;
+  } else if (model?.toLowerCase().includes('learnlm') === true) {
+    return <GeminiIcon size={size * 0.7} />;
   } else {
     return <PaLMIcon size={size * 0.7} />;
   }
@@ -40,6 +42,8 @@ function getGoogleModelName(model: string | null | undefined) {
     return 'Codey';
   } else if (model?.toLowerCase().includes('gemini') === true) {
     return 'Gemini';
+  } else if (model?.toLowerCase().includes('learnlm') === true) {
+    return 'LearnLM';
   } else {
     return 'PaLM2';
   }

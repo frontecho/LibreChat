@@ -126,7 +126,7 @@ class GoogleClient extends BaseClient {
     this.options.attachments?.then((attachments) => this.checkVisionRequest(attachments));
 
     /** @type {boolean} Whether using a "GenerativeAI" Model */
-    this.isGenerativeModel = this.modelOptions.model.includes('gemini');
+    this.isGenerativeModel = this.modelOptions.model.includes('gemini') || this.modelOptions.model.includes('learnlm');
     const { isGenerativeModel } = this;
     this.isChatModel = !isGenerativeModel && this.modelOptions.model.includes('chat');
     const { isChatModel } = this;
@@ -225,7 +225,6 @@ class GoogleClient extends BaseClient {
     this.defaultVisionModel = this.options.visionModel ?? 'gemini-pro-vision';
     const availableModels = this.options.modelsConfig?.[EModelEndpoint.google];
     this.isVisionModel = validateVisionModel({ model: this.modelOptions.model, availableModels });
-
     if (
       attachments &&
       attachments.some((file) => file?.type && file?.type?.includes('image')) &&
