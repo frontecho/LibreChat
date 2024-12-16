@@ -51,7 +51,8 @@ const googleModels = {
   'gemini-pro-vision': 12288, // -4096 from max
   'gemini-exp': 8000,
   'learnlm-1.5': 8000,
-  'gemini-1.5': 1048576, // -8192 from max
+  'gemini-2.0': 1048576,
+  'gemini-1.5': 1048576,
   'text-bison-32k': 32758, // -10 from max
   'chat-bison-32k': 32758, // -10 from max
   'code-bison-32k': 32758, // -10 from max
