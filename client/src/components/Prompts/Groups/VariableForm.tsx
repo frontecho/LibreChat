@@ -147,7 +147,7 @@ export default function VariableForm({
             remarkPlugins={[supersub, remarkGfm, [remarkMath, { singleDollarTextMath: true }]]}
             rehypePlugins={[
               /** @ts-ignore */
-              [rehypeKatex, { output: 'mathml' }],
+              [rehypeKatex, { output: 'htmlAndMathml' }],
               /** @ts-ignore */
               [rehypeHighlight, { ignoreMissing: true }],
             ]}

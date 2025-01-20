@@ -138,7 +138,8 @@ export const a: React.ElementType = memo(
 );
 
 export const p: React.ElementType = memo(({ children }: { children: React.ReactNode }) => {
-  return <p className="mb-2 whitespace-pre-wrap">{children}</p>;
+  // return <p className="mb-2 whitespace-pre-wrap">{children}</p>;
+  return <p>{children}</p>;
 });
 
 const cursor = ' ';
@@ -162,7 +163,7 @@ const Markdown = memo(({ content = '', showCursor, isLatestMessage }: TContentPr
   }
 
   const rehypePlugins = [
-    [rehypeKatex, { output: 'mathml' }],
+    [rehypeKatex, { output: 'htmlAndMathml' }],
     [
       rehypeHighlight,
       {

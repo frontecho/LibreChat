@@ -58,7 +58,7 @@ const PromptDetails = ({ group }: { group?: TPromptGroup }) => {
                 ]}
                 rehypePlugins={[
                   /** @ts-ignore */
-                  [rehypeKatex, { output: 'mathml' }],
+                  [rehypeKatex, { output: 'htmlAndMathml' }],
                   /** @ts-ignore */
                   [rehypeHighlight, { ignoreMissing: true }],
                 ]}
