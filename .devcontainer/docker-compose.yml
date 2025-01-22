@@ -45,14 +45,14 @@ services:
     command: mongod --noauth
   meilisearch:
     container_name: chat-meilisearch
-    image: getmeili/meilisearch:v1.7.3
+    image: getmeili/meilisearch:v1.12.3
     restart: always
     expose:
       - 7700
     environment:
       - MEILI_HOST=http://meilisearch:7700
     volumes:
-      - ./meili_data_v1.7:/meili_data
+      - ./meili_data:/meili_data
     env_file:
       - .env.dev
   vectordb:

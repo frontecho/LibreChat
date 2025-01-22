@@ -60,15 +60,12 @@ html {
   --surface-tertiary: var(--gray-100);
   --surface-tertiary-alt: var(--white);
   --surface-dialog: var(--white);
-  --surface-submit: var(--green-500);
-  /* --border-light: var(--gray-200);
-  --border-medium: var(--gray-300);
-  --border-heavy: var(--gray-400);
-  --border-xheavy: var(--gray-500); */
-  --border-medium-alt: var(--gray-300);
+  --surface-submit: var(--green-700);
+  --surface-submit-hover: var(--green-800);
   --border-xlight: rgba(0, 0, 0, 0.05);
   --border-light: rgba(0, 0, 0, 0.1);
   --border-medium: rgba(0, 0, 0, .15);
+  --border-medium-alt: rgba(0, 0, 0, .15);
   --border-heavy: rgba(0, 0, 0, .2);
   --border-xheavy: rgba(0, 0, 0, .25);
   --link: #2964aa;
@@ -121,7 +118,8 @@ html {
   --surface-tertiary: var(--gray-700);
   --surface-tertiary-alt: var(--gray-700);
   --surface-dialog: var(--gray-850);
-  --surface-submit: var(--green-600);
+  --surface-submit: var(--green-700);
+  --surface-submit-hover: var(--green-800);
   --border-light: var(--gray-700);
   --border-medium-alt: var(--gray-600);
   --border-medium: var(--gray-600);
@@ -3572,4 +3570,42 @@ html {
 .katex-display.fleqn>.katex {
   padding-left: 2em;
   text-align: left
+}
+/** AnimatedSearchInput style */
+
+@keyframes gradient-x {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 15s ease infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.scale-98 {
+  transform: scale(0.98);
 }
