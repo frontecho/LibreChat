@@ -7,7 +7,7 @@ services:
         USERNAME: node
         USER_UID: ${UID:-1000}
         USER_GID: ${GID:-1000}
-    restart: always
+    restart: unless-stopped
     links:
       - mongodb
       - meilisearch
@@ -37,7 +37,7 @@ services:
   mongodb:
     container_name: chat-mongodb
     image: mongo
-    restart: always
+    restart: unless-stopped
     expose:
       - 27017
     volumes:
@@ -46,19 +46,19 @@ services:
   meilisearch:
     container_name: chat-meilisearch
     image: getmeili/meilisearch:v1.12.3
-    restart: always
+    restart: unless-stopped
     expose:
       - 7700
     environment:
       - MEILI_HOST=http://meilisearch:7700
     volumes:
-      - ./meili_data:/meili_data
+      - ./meili_data_v1.12:/meili_data
     env_file:
       - .env.dev
   vectordb:
     container_name: vectordb
     image: ankane/pgvector:latest
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
@@ -68,7 +68,7 @@ services:
   rag_api:
     container_name: rag_api
     image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
-    restart: always
+    restart: unless-stopped
     links:
       - vectordb
     expose:
