@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './style.css';
 import './mobile.css';
+import 'katex/dist/katex.min.css';
 import { ApiErrorBoundaryProvider } from './hooks/ApiErrorBoundaryContext';
 
 const container = document.getElementById('root');
