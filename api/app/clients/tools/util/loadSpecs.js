@@ -63,7 +63,7 @@ async function loadSpecs({ llm, user, message, tools = [], map = false, memory, 
   const validJsons = [];
   const constructorMap = {};
 
-  logger.debug('[validateJson] files', files);
+  // logger.debug('[validateJson] files', files);
 
   for (const file of files) {
     if (path.extname(file) === '.json') {
