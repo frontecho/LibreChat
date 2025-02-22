@@ -7,6 +7,7 @@ const {
   ImageDetail,
   EModelEndpoint,
   resolveHeaders,
+  KnownEndpoints,
   openAISettings,
   ImageDetailCost,
   CohereConstants,
@@ -65,7 +66,7 @@ class OpenAIClient extends BaseClient {
     /** @type {OpenAIUsageMetadata | undefined} */
     this.usage;
     /** @type {boolean|undefined} */
-    this.isO1Model;
+    this.isOmni;
     /** @type {SplitStreamHandler | undefined} */
     this.streamHandler;
   }
@@ -105,8 +106,8 @@ class OpenAIClient extends BaseClient {
       this.checkVisionRequest(this.options.attachments);
     }
 
-    const o1Pattern = /\bo1\b/i;
-    this.isO1Model = o1Pattern.test(this.modelOptions.model);
+    const omniPattern = /\b(o1|o3)\b/i;
+    this.isOmni = omniPattern.test(this.modelOptions.model);
 
     const { OPENROUTER_API_KEY, OPENAI_FORCE_PROMPT } = process.env ?? {};
     if (OPENROUTER_API_KEY && !this.azure) {
@@ -116,11 +117,7 @@ class OpenAIClient extends BaseClient {
 
     const { reverseProxyUrl: reverseProxy } = this.options;
 
-    if (
-      !this.useOpenRouter &&
-      reverseProxy &&
-      reverseProxy.includes('https://openrouter.ai/api/v1')
-    ) {
+    if (!this.useOpenRouter && reverseProxy && reverseProxy.includes(KnownEndpoints.openrouter)) {
       this.useOpenRouter = true;
     }
 
@@ -146,7 +143,7 @@ class OpenAIClient extends BaseClient {
     const { model } = this.modelOptions;
 
     this.isChatCompletion =
-      o1Pattern.test(model) || model.includes('gpt') || this.useOpenRouter || !!reverseProxy;
+      omniPattern.test(model) || model.includes('gpt') || this.useOpenRouter || !!reverseProxy;
     this.isChatGptModel = this.isChatCompletion;
     if (
       model.includes('text-davinci') ||
@@ -475,7 +472,7 @@ class OpenAIClient extends BaseClient {
       promptPrefix = this.augmentedPrompt + promptPrefix;
     }
 
-    if (promptPrefix && this.isO1Model !== true) {
+    if (promptPrefix && this.isOmni !== true) {
       promptPrefix = `Instructions:\n${promptPrefix.trim()}`;
       instructions = {
         role: 'system',
@@ -503,12 +500,11 @@ class OpenAIClient extends BaseClient {
     };
 
     /** EXPERIMENTAL */
-    if (promptPrefix && this.isO1Model === true) {
+    if (promptPrefix && this.isOmni === true) {
       const lastUserMessageIndex = payload.findLastIndex((message) => message.role === 'user');
       if (lastUserMessageIndex !== -1) {
-        payload[
-          lastUserMessageIndex
-        ].content = `${promptPrefix}\n${payload[lastUserMessageIndex].content}`;
+        payload[lastUserMessageIndex].content =
+          `${promptPrefix}\n${payload[lastUserMessageIndex].content}`;
       }
     }
 
@@ -1067,14 +1063,36 @@ ${convo}
     });
   }
 
-  getStreamText() {
+  /**
+   *
+   * @param {string[]} [intermediateReply]
+   * @returns {string}
+   */
+  getStreamText(intermediateReply) {
     if (!this.streamHandler) {
-      return '';
+      return intermediateReply?.join('') ?? '';
+    }
+
+    let thinkMatch;
+    let remainingText;
+    let reasoningText = '';
+
+    if (this.streamHandler.reasoningTokens.length > 0) {
+      reasoningText = this.streamHandler.reasoningTokens.join('');
+      thinkMatch = reasoningText.match(/<think>([\s\S]*?)<\/think>/)?.[1]?.trim();
+      if (thinkMatch != null && thinkMatch) {
+        const reasoningTokens = `:::thinking\n${thinkMatch}\n:::\n`;
+        remainingText = reasoningText.split(/<\/think>/)?.[1]?.trim() || '';
+        return `${reasoningTokens}${remainingText}${this.streamHandler.tokens.join('')}`;
+      } else if (thinkMatch === '') {
+        remainingText = reasoningText.split(/<\/think>/)?.[1]?.trim() || '';
+        return `${remainingText}${this.streamHandler.tokens.join('')}`;
+      }
     }
 
     const reasoningTokens =
-      this.streamHandler.reasoningTokens.length > 0
-        ? `:::thinking\n${this.streamHandler.reasoningTokens.join('')}\n:::\n`
+      reasoningText.length > 0
+        ? `:::thinking\n${reasoningText.replace('<think>', '').replace('</think>', '').trim()}\n:::\n`
         : '';
 
     return `${reasoningTokens}${this.streamHandler.tokens.join('')}`;
@@ -1200,7 +1218,7 @@ ${convo}
         opts.defaultHeaders = { ...opts.defaultHeaders, 'api-key': this.apiKey };
       }
 
-      if (this.isO1Model === true && modelOptions.max_tokens != null) {
+      if (this.isOmni === true && modelOptions.max_tokens != null) {
         modelOptions.max_completion_tokens = modelOptions.max_tokens;
         delete modelOptions.max_tokens;
       }
@@ -1280,12 +1298,15 @@ ${convo}
       let streamResolve;
 
       if (
-        this.isO1Model === true &&
+        this.isOmni === true &&
         (this.azure || /o1(?!-(?:mini|preview)).*$/.test(modelOptions.model)) &&
+        !/o3-.*$/.test(this.modelOptions.model) &&
         modelOptions.stream
       ) {
         delete modelOptions.stream;
         delete modelOptions.stop;
+      } else if (!this.isOmni && modelOptions.reasoning_effort != null) {
+        delete modelOptions.reasoning_effort;
       }
 
       let reasoningKey = 'reasoning_content';
@@ -1311,11 +1332,19 @@ ${convo}
         streamPromise = new Promise((resolve) => {
           streamResolve = resolve;
         });
+        /** @type {OpenAI.OpenAI.CompletionCreateParamsStreaming} */
+        const params = {
+          ...modelOptions,
+          stream: true,
+        };
+        if (
+          this.options.endpoint === EModelEndpoint.openAI ||
+          this.options.endpoint === EModelEndpoint.azureOpenAI
+        ) {
+          params.stream_options = { include_usage: true };
+        }
         const stream = await openai.beta.chat.completions
-          .stream({
-            ...modelOptions,
-            stream: true,
-          })
+          .stream(params)
           .on('abort', () => {
             /* Do nothing here */
           })
@@ -1362,6 +1391,14 @@ ${convo}
         }
 
         for await (const chunk of stream) {
+          // Add finish_reason: null if missing in any choice
+          if (chunk.choices) {
+            chunk.choices.forEach((choice) => {
+              if (!('finish_reason' in choice)) {
+                choice.finish_reason = null;
+              }
+            });
+          }
           this.streamHandler.handle(chunk);
           if (abortController.signal.aborted) {
             stream.controller.abort();
@@ -1438,7 +1475,7 @@ ${convo}
         this.options.context !== 'title' &&
         message.content.startsWith('<think>')
       ) {
-        return message.content.replace('<think>', ':::thinking').replace('</think>', ':::');
+        return this.getStreamText();
       }
 
       return message.content;
@@ -1447,7 +1484,7 @@ ${convo}
         err?.message?.includes('abort') ||
         (err instanceof OpenAI.APIError && err?.message?.includes('abort'))
       ) {
-        return intermediateReply.join('');
+        return this.getStreamText(intermediateReply);
       }
       if (
         err?.message?.includes(
@@ -1462,10 +1499,18 @@ ${convo}
         (err instanceof OpenAI.OpenAIError && err?.message?.includes('missing finish_reason'))
       ) {
         logger.error('[OpenAIClient] Known OpenAI error:', err);
-        return intermediateReply.join('');
+        if (this.streamHandler && this.streamHandler.reasoningTokens.length) {
+          return this.getStreamText();
+        } else if (intermediateReply.length > 0) {
+          return this.getStreamText(intermediateReply);
+        } else {
+          throw err;
+        }
       } else if (err instanceof OpenAI.APIError) {
-        if (intermediateReply.length > 0) {
-          return intermediateReply.join('');
+        if (this.streamHandler && this.streamHandler.reasoningTokens.length) {
+          return this.getStreamText();
+        } else if (intermediateReply.length > 0) {
+          return this.getStreamText(intermediateReply);
         } else {
           throw err;
         }

@@ -3,6 +3,7 @@ const {
   EnvVar,
   Providers,
   GraphEvents,
+  getMessageId,
   ToolEndHandler,
   handleToolCalls,
   ChatModelStreamHandler,
@@ -46,7 +47,7 @@ class ModelEndHandler {
     }
 
     try {
-      if (metadata.provider === Providers.GOOGLE) {
+      if (metadata.provider === Providers.GOOGLE || graph.clientOptions?.disableStreaming) {
         handleToolCalls(data?.output?.tool_calls, metadata, graph);
       }
 
@@ -59,6 +60,38 @@ class ModelEndHandler {
       }
 
       this.collectedUsage.push(usage);
+      if (!graph.clientOptions?.disableStreaming) {
+        return;
+      }
+      if (!data.output.content) {
+        return;
+      }
+      const stepKey = graph.getStepKey(metadata);
+      const message_id = getMessageId(stepKey, graph) ?? '';
+      if (message_id) {
+        graph.dispatchRunStep(stepKey, {
+          type: StepTypes.MESSAGE_CREATION,
+          message_creation: {
+            message_id,
+          },
+        });
+      }
+      const stepId = graph.getStepIdByKey(stepKey);
+      const content = data.output.content;
+      if (typeof content === 'string') {
+        graph.dispatchMessageDelta(stepId, {
+          content: [
+            {
+              type: 'text',
+              text: content,
+            },
+          ],
+        });
+      } else if (content.every((c) => c.type?.startsWith('text'))) {
+        graph.dispatchMessageDelta(stepId, {
+          content,
+        });
+      }
     } catch (error) {
       logger.error('Error handling model end event:', error);
     }
@@ -153,6 +186,22 @@ function getDefaultHandlers({ res, aggregateContent, toolEndCallback, collectedU
     [GraphEvents.ON_MESSAGE_DELTA]: {
       /**
        * Handle ON_MESSAGE_DELTA event.
+       * @param {string} event - The event name.
+       * @param {StreamEventData} data - The event data.
+       * @param {GraphRunnableConfig['configurable']} [metadata] The runnable metadata.
+       */
+      handle: (event, data, metadata) => {
+        if (metadata?.last_agent_index === metadata?.agent_index) {
+          sendEvent(res, { event, data });
+        } else if (!metadata?.hide_sequential_outputs) {
+          sendEvent(res, { event, data });
+        }
+        aggregateContent({ event, data });
+      },
+    },
+    [GraphEvents.ON_REASONING_DELTA]: {
+      /**
+       * Handle ON_REASONING_DELTA event.
        * @param {string} event - The event name.
        * @param {StreamEventData} data - The event data.
        * @param {GraphRunnableConfig['configurable']} [metadata] The runnable metadata.
