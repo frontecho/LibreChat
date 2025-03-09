@@ -2,6 +2,7 @@ const z = require('zod');
 const { EModelEndpoint } = require('librechat-data-provider');
 
 const openAIModels = {
+  'chatgpt-4o-latest': 127500, // -500 from max 
   'o3-mini': 195000, // -5000 from max
   o1: 195000, // -5000 from max
   'o1-mini': 127500, // -500 from max
@@ -198,7 +199,15 @@ const xAIModels = {
   'grok-2-vision-1212': 32768,
 };
 
-const aggregateModels = { ...openAIModels, ...googleModels, ...bedrockModels, ...xAIModels };
+const customModels = {
+  'DeepSeek-R1': 63000, // -1000 from max (Azure API)
+  'QwQ-32b': 127500, // -500 from max
+  'qwq-plus': 127500, // -500 from max
+  'qwen-max': 31990, // -10 from max
+  'qwen-omni': 32000, // -10 from max
+}
+
+const aggregateModels = { ...openAIModels, ...googleModels, ...bedrockModels, ...xAIModels, ...customModels};
 
 const maxTokensMap = {
   [EModelEndpoint.azureOpenAI]: openAIModels,
@@ -214,7 +223,7 @@ const modelMaxOutputs = {
   o1: 32268, // -500 from max: 32,768
   'o1-mini': 65136, // -500 from max: 65,536
   'o1-preview': 32268, // -500 from max: 32,768
-  system_default: 1024,
+  system_default: 4096,
 };
 
 const anthropicMaxOutputs = {
