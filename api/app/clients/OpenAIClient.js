@@ -226,10 +226,6 @@ class OpenAIClient extends BaseClient {
       logger.debug('Using Azure endpoint');
     }
 
-    if (this.useOpenRouter) {
-      this.completionsUrl = 'https://openrouter.ai/api/v1/chat/completions';
-    }
-
     return this;
   }
 
@@ -1346,14 +1342,6 @@ ${convo}
       let streamResolve;
 
       if (
-        this.isOmni === true &&
-        (this.azure || /o1(?!-(?:mini|preview)).*$/.test(modelOptions.model)) &&
-        !/o3-.*$/.test(this.modelOptions.model) &&
-        modelOptions.stream
-      ) {
-        delete modelOptions.stream;
-        delete modelOptions.stop;
-      } else if (
         (!this.isOmni || /^o1-(mini|preview)/i.test(modelOptions.model)) &&
         modelOptions.reasoning_effort != null
       ) {
