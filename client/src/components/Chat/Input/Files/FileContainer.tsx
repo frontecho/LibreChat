@@ -1,22 +1,40 @@
 import type { TFile } from 'librechat-data-provider';
 import type { ExtendedFile } from '~/common';
+import { getFileType, cn } from '~/utils';
 import FilePreview from './FilePreview';
 import RemoveFile from './RemoveFile';
-import { getFileType } from '~/utils';
 
 const FileContainer = ({
   file,
+  overrideType,
+  buttonClassName,
+  containerClassName,
   onDelete,
+  onClick,
 }: {
-  file: ExtendedFile | TFile;
+  file: Partial<ExtendedFile | TFile>;
+  overrideType?: string;
+  buttonClassName?: string;
+  containerClassName?: string;
   onDelete?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }) => {
-  const fileType = getFileType(file.type);
+  const fileType = getFileType(overrideType ?? file.type);
 
   return (
-    <div className="group relative inline-block text-sm text-text-primary">
-      <div className="relative overflow-hidden rounded-xl border border-border-medium transition-all duration-300">
-        <div className="w-56 bg-surface-tertiary p-2">
+    <div
+      className={cn('group relative inline-block text-sm text-text-primary', containerClassName)}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={file.filename}
+        className={cn(
+          'relative overflow-hidden rounded-xl border border-border-medium transition-all duration-300',
+          buttonClassName,
+        )}
+      >
+        <div className="w-56 p-2">
           <div className="flex flex-row items-center gap-2">
             <FilePreview file={file} fileType={fileType} className="relative" />
             <div className="overflow-hidden">
@@ -29,7 +47,7 @@ const FileContainer = ({
             </div>
           </div>
         </div>
-      </div>
+      </button>
       {onDelete && <RemoveFile onRemove={onDelete} />}
     </div>
   );
