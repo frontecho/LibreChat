@@ -205,7 +205,7 @@ const Markdown = memo(({ content = '', isLatestMessage }: TContentProps) => {
     remarkGfm,
     remarkDirective,
     artifactPlugin,
-    [remarkMath, { singleDollarTextMath: true }],
+    [remarkMath, { singleDollarTextMath: false }],
     unicodeCitation,
   ];
 
