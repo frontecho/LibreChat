@@ -224,6 +224,7 @@ const xAIModels = {
   'grok-3-fast': 131072,
   'grok-3-mini': 131072,
   'grok-3-mini-fast': 131072,
+  'grok-4': 256000, // 256K context
 };
 
 const customModels = {
@@ -232,6 +233,7 @@ const customModels = {
   'qwq-plus': 127500, // -500 from max
   'qwen-max': 31990, // -10 from max
   'qwen-omni': 32000, // -10 from max
+  'kimi': 131000,
 }
 
 const aggregateModels = { ...openAIModels, ...googleModels, ...bedrockModels, ...xAIModels, ...customModels};
