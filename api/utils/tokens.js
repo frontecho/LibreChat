@@ -20,6 +20,9 @@ const openAIModels = {
   'gpt-4.1': 1047576,
   'gpt-4.1-mini': 1047576,
   'gpt-4.1-nano': 1047576,
+  'gpt-5': 400000,
+  'gpt-5-mini': 400000,
+  'gpt-5-nano': 400000,
   'gpt-4o': 127500, // -500 from max
   'gpt-4o-mini': 127500, // -500 from max
   'gpt-4o-2024-05-13': 127500, // -500 from max
@@ -106,7 +109,7 @@ const anthropicModels = {
   'claude-3.7-sonnet': 200000,
   'claude-3-5-sonnet-latest': 200000,
   'claude-3.5-sonnet-latest': 200000,
-  'claude-sonnet-4': 200000,
+  'claude-sonnet-4': 1000000,
   'claude-opus-4': 200000,
   'claude-4': 200000,
 };
@@ -197,6 +200,7 @@ const amazonModels = {
   'amazon.nova-micro-v1:0': 127000, // -1000 from max,
   'amazon.nova-lite-v1:0': 295000, // -5000 from max,
   'amazon.nova-pro-v1:0': 295000, // -5000 from max,
+  'amazon.nova-premier-v1:0': 995000, // -5000 from max,
 };
 
 const bedrockModels = {
@@ -234,6 +238,8 @@ const customModels = {
   'qwen-max': 31990, // -10 from max
   'qwen-omni': 32000, // -10 from max
   'kimi': 131000,
+  'gpt-oss-20b': 131000,
+  'gpt-oss-120b': 131000,
 }
 
 const aggregateModels = { ...openAIModels, ...googleModels, ...bedrockModels, ...xAIModels, ...customModels};
@@ -252,6 +258,11 @@ const modelMaxOutputs = {
   o1: 32268, // -500 from max: 32,768
   'o1-mini': 65136, // -500 from max: 65,536
   'o1-preview': 32268, // -500 from max: 32,768
+  'gpt-5': 128000,
+  'gpt-5-mini': 128000,
+  'gpt-5-nano': 128000,
+  'gpt-oss-20b': 131000,
+  'gpt-oss-120b': 131000,
   system_default: 4096,
 };
 
@@ -470,12 +481,15 @@ const tiktokenModels = new Set([
 ]);
 
 module.exports = {
-  tiktokenModels,
-  maxTokensMap,
   inputSchema,
   modelSchema,
+  maxTokensMap,
+  tiktokenModels,
+  maxOutputTokensMap,
   matchModelName,
   processModelData,
   getModelMaxTokens,
+  getModelTokenValue,
+  findMatchingPattern,
   getModelMaxOutputTokens,
 };
