@@ -1,12 +1,12 @@
 const { EModelEndpoint } = require('librechat-data-provider');
 const {
+  maxTokensMap,
+  matchModelName,
+  processModelData,
+  getModelMaxTokens,
   maxOutputTokensMap,
   findMatchingPattern,
-  getModelMaxTokens,
-  processModelData,
-  matchModelName,
-  maxTokensMap,
-} = require('./tokens');
+} = require('@librechat/api');
 
 describe('getModelMaxTokens', () => {
   test('should return correct tokens for exact match', () => {
@@ -262,6 +262,15 @@ describe('getModelMaxTokens', () => {
     expect(getModelMaxTokens('gemini-1.5-pro-preview-0409', EModelEndpoint.google)).toBe(
       maxTokensMap[EModelEndpoint.google]['gemini-1.5'],
     );
+    expect(getModelMaxTokens('gemini-2.5-pro', EModelEndpoint.google)).toBe(
+      maxTokensMap[EModelEndpoint.google]['gemini-2.5-pro'],
+    );
+    expect(getModelMaxTokens('gemini-2.5-flash', EModelEndpoint.google)).toBe(
+      maxTokensMap[EModelEndpoint.google]['gemini-2.5-flash'],
+    );
+    expect(getModelMaxTokens('gemini-2.5-flash-lite', EModelEndpoint.google)).toBe(
+      maxTokensMap[EModelEndpoint.google]['gemini-2.5-flash-lite'],
+    );
     expect(getModelMaxTokens('gemini-pro-vision', EModelEndpoint.google)).toBe(
       maxTokensMap[EModelEndpoint.google]['gemini-pro-vision'],
     );
@@ -394,7 +403,7 @@ describe('getModelMaxTokens', () => {
   });
 
   test('should return correct max output tokens for GPT-5 models', () => {
-    const { getModelMaxOutputTokens } = require('./tokens');
+    const { getModelMaxOutputTokens } = require('@librechat/api');
     ['gpt-5', 'gpt-5-mini', 'gpt-5-nano'].forEach((model) => {
       expect(getModelMaxOutputTokens(model)).toBe(maxOutputTokensMap[EModelEndpoint.openAI][model]);
       expect(getModelMaxOutputTokens(model, EModelEndpoint.openAI)).toBe(
@@ -407,7 +416,7 @@ describe('getModelMaxTokens', () => {
   });
 
   test('should return correct max output tokens for GPT-OSS models', () => {
-    const { getModelMaxOutputTokens } = require('./tokens');
+    const { getModelMaxOutputTokens } = require('@librechat/api');
     ['gpt-oss-20b', 'gpt-oss-120b'].forEach((model) => {
       expect(getModelMaxOutputTokens(model)).toBe(maxOutputTokensMap[EModelEndpoint.openAI][model]);
       expect(getModelMaxOutputTokens(model, EModelEndpoint.openAI)).toBe(

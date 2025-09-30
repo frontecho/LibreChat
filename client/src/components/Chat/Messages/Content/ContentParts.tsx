@@ -26,6 +26,7 @@ type ContentPartsProps = {
   isCreatedByUser: boolean;
   isLast: boolean;
   isSubmitting: boolean;
+  isLatestMessage?: boolean;
   edit?: boolean;
   enterEdit?: (cancel?: boolean) => void | null | undefined;
   siblingIdx?: number;
@@ -45,6 +46,7 @@ const ContentParts = memo(
     isCreatedByUser,
     isLast,
     isSubmitting,
+    isLatestMessage,
     edit,
     enterEdit,
     siblingIdx,
@@ -54,6 +56,8 @@ const ContentParts = memo(
     const [showThinking, setShowThinking] = useRecoilState<boolean>(store.showThinking);
     const [isExpanded, setIsExpanded] = useState(showThinking);
     const attachmentMap = useMemo(() => mapAttachments(attachments ?? []), [attachments]);
+
+    const effectiveIsSubmitting = isLatestMessage ? isSubmitting : false;
 
     const hasReasoningParts = useMemo(() => {
       const hasThinkPart = content?.some((part) => part?.type === ContentTypes.THINK) ?? false;
@@ -94,6 +98,12 @@ const ContentParts = memo(
               return null;
             }
 
+            const isToolCall =
+              part.type === ContentTypes.TOOL_CALL || part['tool_call_ids'] != null;
+            if (isToolCall) {
+              return null;
+            }
+
             return (
               <EditTextPart
                 index={idx}
@@ -128,7 +138,9 @@ const ContentParts = memo(
                   })
                 }
                 label={
-                  isSubmitting && isLast ? localize('com_ui_thinking') : localize('com_ui_thoughts')
+                  effectiveIsSubmitting && isLast
+                    ? localize('com_ui_thinking')
+                    : localize('com_ui_thoughts')
                 }
               />
             </div>
@@ -149,12 +161,14 @@ const ContentParts = memo(
                     conversationId,
                     partIndex: idx,
                     nextType: content[idx + 1]?.type,
+                    isSubmitting: effectiveIsSubmitting,
+                    isLatestMessage,
                   }}
                 >
                   <Part
                     part={part}
                     attachments={attachments}
-                    isSubmitting={isSubmitting}
+                    isSubmitting={effectiveIsSubmitting}
                     key={`part-${messageId}-${idx}`}
                     isCreatedByUser={isCreatedByUser}
                     isLast={idx === content.length - 1}

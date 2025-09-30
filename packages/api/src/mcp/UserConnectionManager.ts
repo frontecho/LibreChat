@@ -1,14 +1,10 @@
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '@librechat/data-schemas';
-import type { TokenMethods } from '@librechat/data-schemas';
-import type { TUser } from 'librechat-data-provider';
-import type { FlowStateManager } from '~/flow/manager';
-import type { MCPOAuthTokens } from '~/mcp/oauth';
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { MCPConnectionFactory } from '~/mcp/MCPConnectionFactory';
 import { MCPServersRegistry } from '~/mcp/MCPServersRegistry';
 import { MCPConnection } from './connection';
-import type { RequestBody } from '~/types';
 import type * as t from './types';
+import { ConnectionsRepository } from '~/mcp/ConnectionsRepository';
 
 /**
  * Abstract base class for managing user-specific MCP connections with lifecycle management.
@@ -19,6 +15,9 @@ import type * as t from './types';
  */
 export abstract class UserConnectionManager {
   protected readonly serversRegistry: MCPServersRegistry;
+  // Connections shared by all users.
+  public appConnections: ConnectionsRepository | null = null;
+  // Connections per userId -> serverName -> connection
   protected userConnections: Map<string, Map<string, MCPConnection>> = new Map();
   /** Last activity timestamp for users (not per server) */
   protected userLastActivity: Map<string, number> = new Map();
@@ -44,8 +43,9 @@ export abstract class UserConnectionManager {
 
   /** Gets or creates a connection for a specific user */
   public async getUserConnection({
-    user,
     serverName,
+    forceNew,
+    user,
     flowManager,
     customUserVars,
     requestBody,
@@ -54,25 +54,25 @@ export abstract class UserConnectionManager {
     oauthEnd,
     signal,
     returnOnOAuth = false,
+    connectionTimeout,
   }: {
-    user: TUser;
     serverName: string;
-    flowManager: FlowStateManager<MCPOAuthTokens | null>;
-    customUserVars?: Record<string, string>;
-    requestBody?: RequestBody;
-    tokenMethods?: TokenMethods;
-    oauthStart?: (authURL: string) => Promise<void>;
-    oauthEnd?: () => Promise<void>;
-    signal?: AbortSignal;
-    returnOnOAuth?: boolean;
-  }): Promise<MCPConnection> {
+    forceNew?: boolean;
+  } & Omit<t.OAuthConnectionOptions, 'useOAuth'>): Promise<MCPConnection> {
     const userId = user.id;
     if (!userId) {
       throw new McpError(ErrorCode.InvalidRequest, `[MCP] User object missing id property`);
     }
 
+    if (this.appConnections!.has(serverName)) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `[MCP][User: ${userId}] Trying to create user-specific connection for app-level server "${serverName}"`,
+      );
+    }
+
     const userServerMap = this.userConnections.get(userId);
-    let connection = userServerMap?.get(serverName);
+    let connection = forceNew ? undefined : userServerMap?.get(serverName);
     const now = Date.now();
 
     // Check if user is idle
@@ -131,6 +131,7 @@ export abstract class UserConnectionManager {
           oauthEnd: oauthEnd,
           returnOnOAuth: returnOnOAuth,
           requestBody: requestBody,
+          connectionTimeout: connectionTimeout,
         },
       );
 
